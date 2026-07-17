@@ -11,6 +11,7 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class PostEditorViewModel {
 
@@ -20,8 +21,13 @@ final class PostEditorViewModel {
     private let post: Post
     private let calendar: Calendar
     private let now: () -> Date
+    /// 永続化ストア（未注入時はメモリ更新のみ。テストでは nil）。
+    private let store: PersistenceStore?
     /// 保存完了時に呼ばれる（呼び出し側で一覧再描画などに使う）。
     private let onSaved: () -> Void
+
+    /// 保存エラー表示用（nil なら非表示）。
+    var saveError: String?
 
     // MARK: - 編集中の値
 
@@ -39,11 +45,13 @@ final class PostEditorViewModel {
 
     init(
         post: Post,
+        store: PersistenceStore? = nil,
         calendar: Calendar = .current,
         now: @escaping () -> Date = { Date() },
         onSaved: @escaping () -> Void = {}
     ) {
         self.post = post
+        self.store = store
         self.calendar = calendar
         self.now = now
         self.onSaved = onSaved
@@ -96,9 +104,12 @@ final class PostEditorViewModel {
 
     // MARK: - 保存
 
-    /// 編集内容を Post へ反映する。保存不可なら何もしない。
-    func save() {
-        guard canSave else { return }
+    /// 編集内容を Post へ反映し永続化する。
+    /// 成功したら true。保存不可や保存失敗（saveError を設定）なら false を返し、
+    /// 呼び出し側は画面を閉じない。
+    @discardableResult
+    func save() -> Bool {
+        guard canSave else { return false }
         let comps = calendar.dateComponents([.hour, .minute], from: scheduledTime)
 
         post.content = content
@@ -109,6 +120,14 @@ final class PostEditorViewModel {
         post.memo = normalizedMemo.isEmpty ? nil : normalizedMemo
         post.updatedAt = now()
 
+        do {
+            try store?.save()
+        } catch {
+            saveError = "データを保存できませんでした。もう一度お試しください。"
+            return false
+        }
+
         onSaved()
+        return true
     }
 }

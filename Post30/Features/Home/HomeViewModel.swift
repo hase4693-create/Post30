@@ -10,6 +10,7 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class HomeViewModel {
 
@@ -25,9 +26,14 @@ final class HomeViewModel {
     private let calendar: Calendar
     /// 現在日時の供給源（テストで固定するため注入）。
     private let now: () -> Date
+    /// 永続化ストア（未注入時はメモリ更新のみ。テストでは nil）。
+    private let store: PersistenceStore?
 
     /// 対象の月次計画（未設定なら nil）。
     private let plan: MonthPlan?
+
+    /// 保存エラー表示用（nil なら非表示）。
+    var saveError: String?
 
     // MARK: - 公開状態
 
@@ -44,11 +50,13 @@ final class HomeViewModel {
     init(
         plan: MonthPlan?,
         clipboardService: ClipboardService,
+        store: PersistenceStore? = nil,
         calendar: Calendar = .current,
         now: @escaping () -> Date = { Date() }
     ) {
         self.plan = plan
         self.clipboardService = clipboardService
+        self.store = store
         self.calendar = calendar
         self.now = now
         reload()
@@ -145,12 +153,18 @@ final class HomeViewModel {
     }
 
     /// 投稿を「投稿済み」にする。既に published の場合は二重実行しない。
+    /// 変更は永続化し、失敗時は saveError を立てる（値は戻さない）。
     func markAsPublished(_ post: Post) {
         guard post.status != .published else { return }
         let timestamp = now()
         post.status = .published
         post.publishedAt = timestamp
         post.updatedAt = timestamp
+        do {
+            try store?.save()
+        } catch {
+            saveError = "データを保存できませんでした。もう一度お試しください。"
+        }
         reload() // 進捗件数・率を即時再計算
     }
 

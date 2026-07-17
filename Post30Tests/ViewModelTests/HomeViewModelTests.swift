@@ -9,6 +9,7 @@
 import XCTest
 @testable import Post30
 
+@MainActor
 final class HomeViewModelTests: XCTestCase {
 
     private let calendar = Calendar.current

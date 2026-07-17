@@ -62,6 +62,15 @@ struct PostGenerationView: View {
                 Button("置き換える", role: .destructive) { viewModel.confirmReplace() }
                 Button("キャンセル", role: .cancel) { viewModel.cancelReplace() }
             }
+            .alert(
+                "データを保存できませんでした。もう一度お試しください。",
+                isPresented: Binding(
+                    get: { viewModel.saveError != nil },
+                    set: { if !$0 { viewModel.saveError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { viewModel.saveError = nil }
+            }
         }
     }
 
@@ -395,35 +404,43 @@ private struct WizardOutlineButton: View {
 #if DEBUG
 #Preview("1. Step1 通常") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step1Filled())
+        .previewPersistence()
 }
 
 #Preview("2. Step1 必須未入力") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step1Empty())
+        .previewPersistence()
 }
 
 #Preview("3. Step2 投稿条件") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step(.conditions))
+        .previewPersistence()
 }
 
 #Preview("4. Step3 確認") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step(.confirmation))
+        .previewPersistence()
 }
 
 #Preview("5. Step4 生成中") {
     PostGenerationView(viewModel: PostGenerationPreviewData.generating(current: 12, total: 30))
+        .previewPersistence()
 }
 
 #Preview("6. 生成完了") {
     PostGenerationView(viewModel: PostGenerationPreviewData.completed(count: 30))
+        .previewPersistence()
 }
 
 #Preview("7. ダークモード") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step1Filled())
         .preferredColorScheme(.dark)
+        .previewPersistence()
 }
 
 #Preview("8. 大きい文字サイズ") {
     PostGenerationView(viewModel: PostGenerationPreviewData.step1Filled())
         .environment(\.dynamicTypeSize, .accessibility3)
+        .previewPersistence()
 }
 #endif

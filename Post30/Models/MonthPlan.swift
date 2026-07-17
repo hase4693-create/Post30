@@ -2,41 +2,31 @@
 //  MonthPlan.swift
 //  Post30
 //
-//  30日間の投稿運用をまとめて管理する月次計画モデル。
+//  30日間の投稿運用をまとめて管理する SwiftData モデル。
 //
-//  設計方針:
-//  - 現段階では SwiftData マクロ(@Model)は使用しない（Phase 8 で導入予定）。
-//  - posts は private(set) とし、addPost 経由でのみ追加することで、
-//    子(Post)から親(MonthPlan)への逆参照(plan)を常に整合させる。
-//  - 進捗率などの表示ロジックは計算プロパティで提供し、
-//    表示用文字列をモデルへ過剰に持たせない。
+//  設計方針（Phase 7 / SwiftData 移行）:
+//  - @Model で永続化。posts は Relationship（cascade 削除）。
+//  - 集計は計算プロパティのまま（保存対象にせず、posts から計算）。
 //
 
 import Foundation
+import SwiftData
 
-/// 30日間の投稿運用計画。
-final class MonthPlan: Identifiable {
-    /// 一意な識別子。
-    let id: UUID
-    /// 計画名。
+@Model
+final class MonthPlan {
+    @Attribute(.unique) var id: UUID
     var title: String
-    /// 対象の年。
     var year: Int
-    /// 対象の月。
     var month: Int
-    /// 運用開始日。
     var startDate: Date
-    /// 運用終了日。
     var endDate: Date
-    /// 作成日時。
     var createdAt: Date
-    /// 更新日時。
     var updatedAt: Date
-    /// ステータス。
     var status: MonthPlanStatus
 
-    /// この計画に属する投稿。追加は addPost / addPosts を用いる。
-    private(set) var posts: [Post]
+    /// この計画に属する投稿。親削除時に子も削除（cascade）。
+    @Relationship(deleteRule: .cascade, inverse: \Post.plan)
+    var posts: [Post]
 
     init(
         id: UUID = UUID(),
@@ -60,56 +50,47 @@ final class MonthPlan: Identifiable {
         self.updatedAt = updatedAt
         self.status = status
         self.posts = []
-        // 逆参照を整合させながら追加する。
         addPosts(posts)
     }
 
     // MARK: - 親子関係の管理
 
-    /// 投稿を1件追加し、所属(monthPlanID)を設定する（単方向参照）。
+    /// 投稿を1件追加し、親子関係を整合させる。
+    /// コンテキスト内外どちらでも整合するよう、両側を防御的に設定する。
     func addPost(_ post: Post) {
-        post.monthPlanID = id
-        posts.append(post)
+        if post.plan !== self {
+            post.plan = self
+        }
+        if !posts.contains(where: { $0 === post }) {
+            posts.append(post)
+        }
     }
 
-    /// 投稿を複数追加する。
     func addPosts(_ newPosts: [Post]) {
         newPosts.forEach { addPost($0) }
     }
 
-    /// 既存の投稿をすべて置き換える（生成結果の反映に使用）。
-    /// 各 Post の monthPlanID もこの計画に更新される。
+    /// 投稿配列をメモリ上で置き換える（永続層での旧Post削除は Store 側で行う）。
     func replacePosts(_ newPosts: [Post]) {
         posts.removeAll()
         addPosts(newPosts)
     }
 
-    // MARK: - 集計（計算プロパティ）
+    // MARK: - 集計（計算プロパティ・非永続）
 
-    /// 総投稿数。
-    var totalPostCount: Int {
-        posts.count
-    }
+    var totalPostCount: Int { posts.count }
 
-    /// 投稿済み件数。
     var publishedCount: Int {
         posts.filter { $0.status == .published }.count
     }
 
-    /// 未投稿件数。
-    /// 「これから投稿する予定のもの」= draft と scheduled のみを数える。
-    /// published（投稿済み）と skipped（見送り）は含めない。
+    /// 未投稿件数（draft + scheduled のみ。published/skipped は含めない）。
     var unpublishedCount: Int {
         posts.filter { $0.status == .draft || $0.status == .scheduled }.count
     }
 
-    /// 投稿完了率（投稿済み件数 ÷ 総投稿数、0.0〜1.0）。
-    /// 総投稿数が0件でもゼロ除算せず 0 を返す。
-    ///
-    /// - Note: ここでの「完了」は published（投稿済み）のみを指す。
-    ///   将来、published + skipped を「処理済み」として扱う
-    ///   processedProgressRate を別途追加できるよう、名称に published を明示している
-    ///   （今回はその新プロパティは追加しない）。
+    /// 投稿完了率（投稿済み ÷ 総数、0.0〜1.0）。0件でもゼロ除算しない。
+    /// - Note: published のみを完了として数える（将来 processedProgressRate を追加可能）。
     var publishedProgressRate: Double {
         guard totalPostCount > 0 else { return 0 }
         return Double(publishedCount) / Double(totalPostCount)
@@ -117,13 +98,10 @@ final class MonthPlan: Identifiable {
 
     // MARK: - 取得ロジック
 
-    /// 指定日に予定されている投稿を返す（日単位で比較）。
     func posts(on date: Date, calendar: Calendar = .current) -> [Post] {
         posts.filter { calendar.isDate($0.scheduledDate, inSameDayAs: date) }
     }
 
-    /// 基準日以降で次に投稿予定（status == .scheduled）の投稿を返す。
-    /// 予定日が早い順で最初の1件。該当がなければ nil。
     func nextScheduledPost(after date: Date = Date(), calendar: Calendar = .current) -> Post? {
         let threshold = calendar.startOfDay(for: date)
         return posts

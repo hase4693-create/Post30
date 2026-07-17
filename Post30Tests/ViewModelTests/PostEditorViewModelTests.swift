@@ -8,6 +8,7 @@
 import XCTest
 @testable import Post30
 
+@MainActor
 final class PostEditorViewModelTests: XCTestCase {
 
     private let calendar = Calendar.current

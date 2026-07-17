@@ -9,6 +9,7 @@
 #if DEBUG
 import Foundation
 
+@MainActor
 enum HomePreviewData {
 
     /// Preview 用の何もしないクリップボード実装。

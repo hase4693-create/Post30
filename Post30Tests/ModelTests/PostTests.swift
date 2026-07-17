@@ -67,8 +67,8 @@ final class PostTests: XCTestCase {
         XCTAssertEqual(post.scheduledTimeText, "08:05")
     }
 
-    // 親子関係: addPost で monthPlanID が設定される
-    func testAddPostSetsMonthPlanID() {
+    // 親子関係: addPost で親（plan）が設定される
+    func testAddPostSetsParentRelationship() {
         let plan = MonthPlan(
             title: "計画",
             year: 2026,
@@ -77,9 +77,9 @@ final class PostTests: XCTestCase {
             endDate: Date()
         )
         let post = Post(scheduledDate: Date())
-        XCTAssertNil(post.monthPlanID)
+        XCTAssertNil(post.plan)
         plan.addPost(post)
-        XCTAssertEqual(post.monthPlanID, plan.id)
+        XCTAssertTrue(post.plan === plan)
         XCTAssertEqual(plan.totalPostCount, 1)
     }
 }

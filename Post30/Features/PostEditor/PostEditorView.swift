@@ -101,14 +101,25 @@ struct PostEditorView: View {
             Button("破棄する", role: .destructive) { dismiss() }
             Button("キャンセル", role: .cancel) {}
         }
+        .alert(
+            "データを保存できませんでした。もう一度お試しください。",
+            isPresented: Binding(
+                get: { viewModel.saveError != nil },
+                set: { if !$0 { viewModel.saveError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.saveError = nil }
+        }
     }
 
     // MARK: - 保存バー
 
     private var saveBar: some View {
         PrimaryButton(title: "保存する", fill: .gradient) {
-            viewModel.save()
-            dismiss()
+            // 保存成功時のみ前画面へ戻る。失敗時は画面を閉じずエラー表示。
+            if viewModel.save() {
+                dismiss()
+            }
         }
         .disabled(!viewModel.canSave)
         .opacity(viewModel.canSave ? 1.0 : 0.5)
@@ -149,18 +160,21 @@ struct PostEditorView: View {
     NavigationStack {
         PostEditorView(viewModel: PostEditorPreviewData.normal())
     }
+    .previewPersistence()
 }
 
 #Preview("本文なし") {
     NavigationStack {
         PostEditorView(viewModel: PostEditorPreviewData.emptyContent())
     }
+    .previewPersistence()
 }
 
 #Preview("長文") {
     NavigationStack {
         PostEditorView(viewModel: PostEditorPreviewData.longContent())
     }
+    .previewPersistence()
 }
 
 #Preview("ダークモード") {
@@ -168,6 +182,7 @@ struct PostEditorView: View {
         PostEditorView(viewModel: PostEditorPreviewData.normal())
     }
     .preferredColorScheme(.dark)
+    .previewPersistence()
 }
 
 #Preview("大きい文字サイズ") {
@@ -175,5 +190,6 @@ struct PostEditorView: View {
         PostEditorView(viewModel: PostEditorPreviewData.normal())
     }
     .environment(\.dynamicTypeSize, .accessibility3)
+    .previewPersistence()
 }
 #endif

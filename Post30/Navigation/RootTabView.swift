@@ -2,37 +2,62 @@
 //  RootTabView.swift
 //  Post30
 //
-//  アプリのルート。ホーム／カレンダー／投稿一覧／設定の4タブ。
-//  投稿生成ウィザードは全画面カバーで提示する。
+//  アプリのルート。SwiftData を Single Source of Truth として、
+//  ホーム・投稿一覧・編集・生成が同じ永続 MonthPlan を参照する。
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootTabView: View {
     enum Tab: Hashable {
         case home, calendar, postList, settings
     }
 
+    @Environment(\.modelContext) private var modelContext
+
     @State private var selection: Tab = .home
     @State private var isPresentingGeneration = false
 
-    // ホームと投稿一覧で同じ MonthPlan（=同じ Post 参照）を共有することで、
-    // 編集・生成の結果がメモリ上で即時反映される。SwiftData 接続は後続フェーズ。
-    private let sharedPlan: MonthPlan
-    private let homeViewModel: HomeViewModel
-    private let postListViewModel: PostListViewModel
-
-    init(plan: MonthPlan? = nil) {
-        let sharedPlan = plan ?? SampleData.activePlanWith30Posts()
-        self.sharedPlan = sharedPlan
-        self.homeViewModel = HomeViewModel(
-            plan: sharedPlan,
-            clipboardService: SystemClipboardService()
-        )
-        self.postListViewModel = PostListViewModel(plan: sharedPlan)
-    }
+    @State private var store: PersistenceStore?
+    @State private var homeViewModel: HomeViewModel?
+    @State private var postListViewModel: PostListViewModel?
 
     var body: some View {
+        Group {
+            if let homeViewModel, let postListViewModel, let store {
+                tabView(homeViewModel: homeViewModel, postListViewModel: postListViewModel, store: store)
+            } else {
+                ProgressView()
+                    .task { setup() }
+            }
+        }
+    }
+
+    // MARK: - セットアップ（シード＋現在の計画取得）
+
+    @MainActor
+    private func setup() {
+        guard homeViewModel == nil else { return }
+        let store = PersistenceStore(context: modelContext)
+        let plan = try? {
+            try store.seedIfNeeded()
+            return try store.currentMonthPlan()
+        }()
+        self.store = store
+        self.homeViewModel = HomeViewModel(
+            plan: plan,
+            clipboardService: SystemClipboardService(),
+            store: store
+        )
+        self.postListViewModel = PostListViewModel(plan: plan)
+    }
+
+    private func tabView(
+        homeViewModel: HomeViewModel,
+        postListViewModel: PostListViewModel,
+        store: PersistenceStore
+    ) -> some View {
         TabView(selection: $selection) {
             HomeView(
                 viewModel: homeViewModel,
@@ -48,6 +73,7 @@ struct RootTabView: View {
 
             PostListView(
                 viewModel: postListViewModel,
+                store: store,
                 onRequestGeneration: { isPresentingGeneration = true }
             )
             .tabItem { Label("投稿一覧", systemImage: "list.bullet") }
@@ -59,15 +85,23 @@ struct RootTabView: View {
         }
         .tint(Theme.Color.accent)
         .fullScreenCover(isPresented: $isPresentingGeneration) {
-            PostGenerationView(viewModel: makeGenerationViewModel())
+            PostGenerationView(
+                viewModel: makeGenerationViewModel(store: store, homeViewModel: homeViewModel)
+            )
         }
     }
 
     @MainActor
-    private func makeGenerationViewModel() -> PostGenerationViewModel {
-        PostGenerationViewModel(
-            plan: sharedPlan,
+    private func makeGenerationViewModel(
+        store: PersistenceStore,
+        homeViewModel: HomeViewModel
+    ) -> PostGenerationViewModel {
+        // 生成対象の計画：現在のもの。無ければ空の計画を作成する。
+        let plan = (try? store.currentMonthPlan()) ?? (try? store.createEmptyMonthPlan())
+        return PostGenerationViewModel(
+            plan: plan,
             service: MockPostGenerationService(),
+            store: store,
             onGoToPostList: {
                 homeViewModel.reload()
                 selection = .postList
@@ -88,5 +122,6 @@ struct RootTabView: View {
 #if DEBUG
 #Preview {
     RootTabView()
+        .modelContainer(for: [MonthPlan.self, Post.self], inMemory: true)
 }
 #endif

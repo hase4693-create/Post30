@@ -8,6 +8,7 @@
 #if DEBUG
 import Foundation
 
+@MainActor
 enum PostEditorPreviewData {
 
     private static func makePost(content: String) -> Post {

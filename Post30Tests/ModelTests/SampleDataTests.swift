@@ -29,7 +29,7 @@ final class SampleDataTests: XCTestCase {
 
     func testChildPostsReferenceParentPlan() {
         let plan = SampleData.activePlanWith30Posts()
-        // 単方向の親子関係: すべての投稿が親計画の id を保持している。
-        XCTAssertTrue(plan.posts.allSatisfy { $0.monthPlanID == plan.id })
+        // 親子関係: すべての投稿が親計画を参照している。
+        XCTAssertTrue(plan.posts.allSatisfy { $0.plan === plan })
     }
 }

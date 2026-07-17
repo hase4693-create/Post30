@@ -69,17 +69,22 @@ final class PostGenerationViewModel {
     // MARK: - 依存
     private let plan: MonthPlan?
     private let service: PostGenerationService
+    private let store: PersistenceStore?
     private let calendar: Calendar
     private let now: () -> Date
     private let onGoToPostList: () -> Void
     private let onGoHome: () -> Void
     private let onClose: () -> Void
 
+    /// 保存エラー表示用（nil なら非表示）。
+    var saveError: String?
+
     private var generationTask: Task<Void, Never>?
 
     init(
         plan: MonthPlan?,
         service: PostGenerationService = MockPostGenerationService(),
+        store: PersistenceStore? = nil,
         calendar: Calendar = .current,
         now: @escaping () -> Date = { Date() },
         onGoToPostList: @escaping () -> Void = {},
@@ -88,6 +93,7 @@ final class PostGenerationViewModel {
     ) {
         self.plan = plan
         self.service = service
+        self.store = store
         self.calendar = calendar
         self.now = now
         self.onGoToPostList = onGoToPostList
@@ -238,7 +244,18 @@ final class PostGenerationViewModel {
         plan.endDate = endDate
         plan.status = .active
         plan.updatedAt = now()
-        plan.replacePosts(posts)
+
+        if let store {
+            // 永続層：旧Postを削除して置き換え、保存する。
+            do {
+                try store.replacePosts(in: plan, with: posts)
+            } catch {
+                saveError = "データを保存できませんでした。もう一度お試しください。"
+            }
+        } else {
+            // テスト等：メモリ上のみ置き換え。
+            plan.replacePosts(posts)
+        }
     }
 
     // MARK: - 完了画面用の表示値

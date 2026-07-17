@@ -69,6 +69,15 @@ struct HomeView: View {
                     viewModel.showCopyToast = false
                 }
             }
+            .alert(
+                "データを保存できませんでした。もう一度お試しください。",
+                isPresented: Binding(
+                    get: { viewModel.saveError != nil },
+                    set: { if !$0 { viewModel.saveError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { viewModel.saveError = nil }
+            }
         }
     }
 
@@ -281,11 +290,12 @@ private struct GeneratePlaceholderView: View {
         .environment(\.dynamicTypeSize, .accessibility3)
 }
 
-/// Preview で HomeView を単体表示するためのラッパー。
+/// Preview で HomeView を単体表示するためのラッパー（インメモリコンテナを付与）。
 private struct RootTabViewPreviewWrapper: View {
     let viewModel: HomeViewModel
     var body: some View {
         HomeView(viewModel: viewModel)
+            .previewPersistence()
     }
 }
 #endif

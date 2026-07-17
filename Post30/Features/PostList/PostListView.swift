@@ -10,10 +10,16 @@ import SwiftUI
 
 struct PostListView: View {
     @State private var viewModel: PostListViewModel
+    private let store: PersistenceStore?
     private let onRequestGeneration: () -> Void
 
-    init(viewModel: PostListViewModel, onRequestGeneration: @escaping () -> Void = {}) {
+    init(
+        viewModel: PostListViewModel,
+        store: PersistenceStore? = nil,
+        onRequestGeneration: @escaping () -> Void = {}
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.store = store
         self.onRequestGeneration = onRequestGeneration
     }
 
@@ -48,7 +54,7 @@ struct PostListView: View {
             .navigationDestination(for: PostListViewModel.Route.self) { route in
                 switch route {
                 case .edit(let post):
-                    PostEditorView(viewModel: PostEditorViewModel(post: post))
+                    PostEditorView(viewModel: PostEditorViewModel(post: post, store: store))
                 case .generate:
                     GeneratePlaceholderView()
                 }
@@ -118,27 +124,33 @@ private struct GeneratePlaceholderView: View {
 #if DEBUG
 #Preview("1. 投稿30件") {
     PostListView(viewModel: PostListPreviewData.viewModel(filter: .all))
+        .previewPersistence()
 }
 
 #Preview("2. 投稿0件") {
     PostListView(viewModel: PostListPreviewData.emptyViewModel())
+        .previewPersistence()
 }
 
 #Preview("3. 投稿済みだけ") {
     PostListView(viewModel: PostListPreviewData.viewModel(filter: .published))
+        .previewPersistence()
 }
 
 #Preview("4. 未投稿だけ") {
     PostListView(viewModel: PostListPreviewData.viewModel(filter: .unpublished))
+        .previewPersistence()
 }
 
 #Preview("5. ダークモード") {
     PostListView(viewModel: PostListPreviewData.viewModel(filter: .all))
         .preferredColorScheme(.dark)
+        .previewPersistence()
 }
 
 #Preview("6. 大きい文字サイズ") {
     PostListView(viewModel: PostListPreviewData.viewModel(filter: .all))
         .environment(\.dynamicTypeSize, .accessibility3)
+        .previewPersistence()
 }
 #endif
