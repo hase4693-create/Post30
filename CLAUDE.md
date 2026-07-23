@@ -48,3 +48,34 @@ craftflow.apps@gmail.com
 
 Bundle ID
 com.hasegawa.post30
+
+## Development Rules
+
+- Swift 6
+- SwiftData
+- iOS 18+
+- Xcode 最新安定版
+
+## Build Rules
+
+作業完了時は必ず
+
+1. Build
+2. Test
+3. git diff
+4. 今回変更したファイルのみ git add
+5. git commit
+6. git push
+
+を実施する。
+
+## GitHub
+
+Repository:
+hase4693-create/Post30
+
+Default Branch:
+main
+
+GitHub Pages:
+https://hase4693-create.github.io/Post30/privacy-policy/
