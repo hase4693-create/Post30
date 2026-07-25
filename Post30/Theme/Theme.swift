@@ -62,8 +62,10 @@ enum Theme {
         static let border = adaptive(light: 0xE5E7EB, dark: 0x3A3A3C)
         /// カードの影色。
         static let cardShadow = SwiftUI.Color.black.opacity(0.06)
-        /// 成功（投稿済み反映などの一時表現）。
+        /// 成功／投稿済み（緑）。
         static let success = SwiftUI.Color(hex: 0x22C55E)
+        /// 情報／予約済み（青）。
+        static let info = SwiftUI.Color(hex: 0x3882F6)
 
         /// ライト/ダークで切り替わる適応カラーを生成する。
         static func adaptive(light: UInt, dark: UInt) -> SwiftUI.Color {

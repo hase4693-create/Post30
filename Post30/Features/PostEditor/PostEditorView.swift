@@ -22,6 +22,17 @@ struct PostEditorView: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Layout.sectionSpacing) {
+                section("状態") {
+                    HStack(spacing: Theme.Spacing.small) {
+                        // 一覧と同じ共通バッジを再利用（文言・見た目を統一）。
+                        PostStatusBadge(status: viewModel.status)
+                        Spacer()
+                        Text("投稿日を変えても状態は変わりません")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 section("カテゴリー") {
                     Picker("カテゴリー", selection: $vm.category) {
                         ForEach(PostCategory.allCases) { category in
@@ -110,22 +121,67 @@ struct PostEditorView: View {
         ) {
             Button("OK", role: .cancel) { viewModel.saveError = nil }
         }
+        .confirmationDialog(
+            "投稿済みにしますか？",
+            isPresented: $vm.showMarkPublishedDialog,
+            titleVisibility: .visible
+        ) {
+            // 破壊的操作ではないため role: .destructive は使わない。
+            Button("投稿済みにする") {
+                // 編集内容を含めて1回で保存。成功時のみ閉じる。
+                if viewModel.confirmMarkAsPublished() {
+                    dismiss()
+                }
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("この投稿を投稿済みとして記録します。")
+        }
     }
 
     // MARK: - 保存バー
 
     private var saveBar: some View {
-        PrimaryButton(title: "保存する", fill: .gradient) {
-            // 保存成功時のみ前画面へ戻る。失敗時は画面を閉じずエラー表示。
-            if viewModel.save() {
-                dismiss()
+        VStack(spacing: Theme.Spacing.small) {
+            // 未投稿（下書き・予約済み）のときだけ「投稿済みにする」を表示。
+            if viewModel.canMarkAsPublished {
+                markPublishedButton
             }
+
+            PrimaryButton(title: "保存する", fill: .gradient) {
+                // 保存成功時のみ前画面へ戻る。失敗時は画面を閉じずエラー表示。
+                if viewModel.save() {
+                    dismiss()
+                }
+            }
+            .disabled(!viewModel.canSave)
+            .opacity(viewModel.canSave ? 1.0 : 0.5)
         }
-        .disabled(!viewModel.canSave)
-        .opacity(viewModel.canSave ? 1.0 : 0.5)
         .padding(.horizontal, Theme.Layout.screenHorizontalPadding)
         .padding(.vertical, Theme.Spacing.small)
         .background(Theme.Color.screenBackground)
+    }
+
+    /// 「投稿済みにする」（非破壊・成功系の見た目）。
+    private var markPublishedButton: some View {
+        Button {
+            viewModel.requestMarkAsPublished()
+        } label: {
+            Label("投稿済みにする", systemImage: "checkmark.circle")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: Theme.Layout.primaryButtonHeight)
+                .foregroundStyle(Theme.Color.success)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Layout.buttonCornerRadius)
+                        .stroke(Theme.Color.success, lineWidth: 1.5)
+                )
+        }
+        .buttonStyle(PressableButtonStyle())
+        .disabled(!viewModel.canSave)
+        .opacity(viewModel.canSave ? 1.0 : 0.5)
+        .accessibilityLabel("投稿済みにする")
+        .accessibilityHint("この投稿を投稿済みとして記録します")
     }
 
     // MARK: - 入力欄カード

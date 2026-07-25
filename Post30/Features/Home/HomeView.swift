@@ -15,15 +15,19 @@ import UIKit
 
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
+    @State private var showMonthList = false
+    private let store: PersistenceStore?
     private let onShowCalendar: () -> Void
     private let onRequestGeneration: () -> Void
 
     init(
         viewModel: HomeViewModel,
+        store: PersistenceStore? = nil,
         onShowCalendar: @escaping () -> Void = {},
         onRequestGeneration: @escaping () -> Void = {}
     ) {
         _viewModel = State(initialValue: viewModel)
+        self.store = store
         self.onShowCalendar = onShowCalendar
         self.onRequestGeneration = onRequestGeneration
     }
@@ -51,7 +55,8 @@ struct HomeView: View {
             .navigationDestination(for: HomeViewModel.Route.self) { route in
                 switch route {
                 case .edit(let post):
-                    EditPlaceholderView(post: post)
+                    // 一覧・カレンダーと同じ正式な編集画面へ統一（プレースホルダ廃止）。
+                    PostEditorView(viewModel: PostEditorViewModel(post: post, store: store))
                 case .generate:
                     GeneratePlaceholderView()
                 }
@@ -77,6 +82,16 @@ struct HomeView: View {
                 )
             ) {
                 Button("OK", role: .cancel) { viewModel.saveError = nil }
+            }
+            .sheet(isPresented: $showMonthList) {
+                // 「今月の投稿」タップ：当月に絞った既存の投稿一覧を再利用して表示。
+                PostListView(
+                    viewModel: viewModel.makeCurrentMonthListViewModel(),
+                    store: store,
+                    title: "今月の投稿",
+                    onClose: { showMonthList = false },
+                    showsGenerateCTA: false
+                )
             }
         }
     }
@@ -115,7 +130,8 @@ struct HomeView: View {
                 publishedCount: viewModel.publishedCount,
                 totalPostCount: viewModel.totalPostCount,
                 unpublishedCount: viewModel.unpublishedCount,
-                progressRate: viewModel.publishedProgressRate
+                progressRate: viewModel.publishedProgressRate,
+                onTap: { showMonthList = true }
             )
 
             todaySection(content)
@@ -233,21 +249,7 @@ struct HomeView: View {
     }
 }
 
-// MARK: - 最小プレースホルダ（編集・生成）
-
-/// 投稿編集のプレースホルダ。対象 Post を受け取れる構造だけ用意する（本格実装は Phase 4）。
-private struct EditPlaceholderView: View {
-    let post: Post
-
-    var body: some View {
-        ContentUnavailableView(
-            "投稿の編集",
-            systemImage: "pencil",
-            description: Text("編集画面は今後のフェーズで実装します。")
-        )
-        .navigationTitle("編集")
-    }
-}
+// MARK: - 最小プレースホルダ（生成）
 
 /// 30日分生成のプレースホルダ（本格実装は Phase 5）。
 private struct GeneratePlaceholderView: View {

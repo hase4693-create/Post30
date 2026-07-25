@@ -16,14 +16,14 @@ struct PostRowCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                // 上段: カテゴリー・SNS・状態アイコン
+                // 上段: カテゴリー・SNS・ステータスバッジ
                 HStack(spacing: Theme.Spacing.small) {
                     CategoryTag(category: post.category)
                     Text(post.platform.displayName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    statusIcon
+                    PostStatusBadge(status: post.status)
                 }
 
                 // 日時
@@ -53,24 +53,6 @@ struct PostRowCard: View {
         .accessibilityLabel(accessibilityText)
         .accessibilityHint("タップして編集画面を開きます")
         .accessibilityAddTraits(.isButton)
-    }
-
-    @ViewBuilder
-    private var statusIcon: some View {
-        switch post.status {
-        case .published:
-            Label(post.status.displayName, systemImage: "checkmark.circle.fill")
-                .labelStyle(.iconOnly)
-                .foregroundStyle(Theme.Color.success)
-        case .skipped:
-            Label(post.status.displayName, systemImage: "minus.circle")
-                .labelStyle(.iconOnly)
-                .foregroundStyle(.secondary)
-        case .draft, .scheduled:
-            Label(post.status.displayName, systemImage: "clock")
-                .labelStyle(.iconOnly)
-                .foregroundStyle(Theme.Color.accentText)
-        }
     }
 
     private var accessibilityText: String {

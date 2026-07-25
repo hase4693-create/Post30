@@ -20,11 +20,11 @@ enum PostStatus: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    /// 日本語の表示名。
+    /// 日本語の表示名（一覧バッジ・編集画面など全ての状態表示で共通利用する唯一の基準）。
     var displayName: String {
         switch self {
         case .draft: return "下書き"
-        case .scheduled: return "予定"
+        case .scheduled: return "予約済み"
         case .published: return "投稿済み"
         case .skipped: return "見送り"
         }

@@ -29,6 +29,9 @@ final class PostEditorViewModel {
     /// 保存エラー表示用（nil なら非表示）。
     var saveError: String?
 
+    /// 「投稿済みにする」の確認ダイアログ表示状態。
+    var showMarkPublishedDialog: Bool = false
+
     // MARK: - 編集中の値
 
     var category: PostCategory
@@ -84,6 +87,22 @@ final class PostEditorViewModel {
         isContentValid
     }
 
+    /// 現在の投稿状態（読み取り専用・共通バッジ表示に使用）。
+    /// 編集画面では状態を変更しない（投稿済み化は正式な投稿完了処理のみ）。
+    var status: PostStatus {
+        post.status
+    }
+
+    /// 現在の投稿状態の表示名（読み取り専用・PostStatus.displayName と一致）。
+    var statusDisplayName: String {
+        post.status.displayName
+    }
+
+    /// 「投稿済みにする」を実行できる状態か（下書き・予約済みのみ・日付非依存）。
+    var canMarkAsPublished: Bool {
+        post.canMarkPublished
+    }
+
     /// メモの正規化値（前後の空白を除去。空なら空文字）。
     private var normalizedMemo: String {
         memo.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -104,14 +123,9 @@ final class PostEditorViewModel {
 
     // MARK: - 保存
 
-    /// 編集内容を Post へ反映し永続化する。
-    /// 成功したら true。保存不可や保存失敗（saveError を設定）なら false を返し、
-    /// 呼び出し側は画面を閉じない。
-    @discardableResult
-    func save() -> Bool {
-        guard canSave else { return false }
+    /// 画面上の編集内容を Post へ反映する（status/publishedAt には触れない・保存はしない）。
+    private func applyEdits() {
         let comps = calendar.dateComponents([.hour, .minute], from: scheduledTime)
-
         post.content = content
         post.category = category
         post.platform = platform
@@ -119,10 +133,53 @@ final class PostEditorViewModel {
         post.scheduledTime = DateComponents(hour: comps.hour, minute: comps.minute)
         post.memo = normalizedMemo.isEmpty ? nil : normalizedMemo
         post.updatedAt = now()
+    }
+
+    /// 編集内容を Post へ反映し永続化する。status/publishedAt は変更しない。
+    /// 成功したら true。保存不可や保存失敗（saveError を設定）なら false を返し、
+    /// 呼び出し側は画面を閉じない。
+    @discardableResult
+    func save() -> Bool {
+        guard canSave else { return false }
+        applyEdits()
 
         do {
             try store?.save()
         } catch {
+            saveError = "データを保存できませんでした。もう一度お試しください。"
+            return false
+        }
+
+        onSaved()
+        return true
+    }
+
+    // MARK: - 投稿済みにする（明示操作）
+
+    /// 「投稿済みにする」ボタン押下：確認ダイアログを出す。
+    func requestMarkAsPublished() {
+        guard canMarkAsPublished else { return }
+        showMarkPublishedDialog = true
+    }
+
+    /// 確認ダイアログの確定：編集内容を含めて1回の保存で投稿済みにする。
+    /// 保存失敗時は状態変更を巻き戻して saveError を立て、false を返す（画面は閉じない）。
+    @discardableResult
+    func confirmMarkAsPublished() -> Bool {
+        guard canMarkAsPublished, canSave else { return false }
+
+        applyEdits()
+        // 巻き戻し用に投稿完了前の状態を保持。
+        let previousStatus = post.status
+        let previousPublishedAt = post.publishedAt
+        post.markPublished(at: now())
+
+        do {
+            try store?.save()
+        } catch {
+            // 投稿済み表示を確定させない：状態遷移を元に戻す。
+            post.status = previousStatus
+            post.publishedAt = previousPublishedAt
             saveError = "データを保存できませんでした。もう一度お試しください。"
             return false
         }

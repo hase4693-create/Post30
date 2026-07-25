@@ -118,4 +118,103 @@ final class PostEditorViewModelTests: XCTestCase {
         vm.save()
         XCTAssertTrue(called)
     }
+
+    // 改善項目1：投稿日を過去に変更して保存しても status は変わらない
+    func testEditingDateDoesNotChangeStatus() {
+        let post = makePost() // status = .scheduled（未投稿）
+        let vm = makeVM(post: post)
+        // 予定日を過去へ変更（本文は既存のまま有効）
+        vm.scheduledDate = calendar.date(from: DateComponents(year: 2020, month: 1, day: 1))!
+        let didSave = vm.save()
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(post.status, .scheduled, "投稿日の変更で status が変化してはいけない")
+        XCTAssertNil(post.publishedAt)
+    }
+
+    // MARK: - Phase 9-2: 投稿済みにする
+
+    private func makePost(status: PostStatus, publishedAt: Date? = nil) -> Post {
+        Post(
+            scheduledDate: calendar.startOfDay(for: Date()),
+            scheduledTime: DateComponents(hour: 8, minute: 0),
+            platform: .threads, category: .empathy,
+            content: "本文", status: status, publishedAt: publishedAt
+        )
+    }
+
+    // 1/2/3. 下書き・予約済みを投稿済みに変更でき、status=published・publishedAt が設定される
+    func testConfirmMarkAsPublishedSetsStatusAndPublishedAt() {
+        for status in [PostStatus.draft, .scheduled] {
+            let post = makePost(status: status)
+            let time = Date(timeIntervalSince1970: 1_900_000_000)
+            let vm = makeVM(post: post, now: time)
+            XCTAssertTrue(vm.canMarkAsPublished)
+            let ok = vm.confirmMarkAsPublished()
+            XCTAssertTrue(ok)
+            XCTAssertEqual(post.status, .published)
+            XCTAssertEqual(post.publishedAt, time)
+            XCTAssertEqual(post.updatedAt, time)
+        }
+    }
+
+    // 5. 編集内容も同時に保存される
+    func testMarkAsPublishedAlsoSavesEdits() {
+        let post = makePost(status: .scheduled)
+        let vm = makeVM(post: post)
+        vm.content = "編集後の本文"
+        vm.category = .failure
+        XCTAssertTrue(vm.confirmMarkAsPublished())
+        XCTAssertEqual(post.content, "編集後の本文")
+        XCTAssertEqual(post.category, .failure)
+        XCTAssertEqual(post.status, .published)
+    }
+
+    // 6. 日付を変更しただけ（保存）では投稿済みにならない
+    func testDateChangeSaveDoesNotPublish() {
+        let post = makePost(status: .scheduled)
+        let vm = makeVM(post: post)
+        vm.scheduledDate = calendar.date(byAdding: .day, value: -10, to: Date())!
+        XCTAssertTrue(vm.save())
+        XCTAssertEqual(post.status, .scheduled)
+        XCTAssertNil(post.publishedAt)
+    }
+
+    // 7. 通常保存では publishedAt が変わらない
+    func testNormalSaveDoesNotSetPublishedAt() {
+        let post = makePost(status: .scheduled)
+        let vm = makeVM(post: post)
+        vm.content = "更新"
+        XCTAssertTrue(vm.save())
+        XCTAssertNil(post.publishedAt)
+    }
+
+    // 8. 既に投稿済みの投稿を開いただけでは publishedAt が変わらない
+    func testOpeningPublishedDoesNotChangePublishedAt() {
+        let original = Date(timeIntervalSince1970: 1_800_000_000)
+        let post = makePost(status: .published, publishedAt: original)
+        let vm = makeVM(post: post)
+        XCTAssertFalse(vm.canMarkAsPublished)
+        vm.requestMarkAsPublished() // ガードで何も起きない
+        XCTAssertFalse(vm.showMarkPublishedDialog)
+        XCTAssertEqual(post.publishedAt, original)
+    }
+
+    // 9/10. 本文が空だと投稿済みにできない（成功扱いにしない）
+    func testCannotMarkAsPublishedWithEmptyContent() {
+        let post = makePost(status: .scheduled)
+        let vm = makeVM(post: post)
+        vm.content = "   "
+        XCTAssertFalse(vm.confirmMarkAsPublished())
+        XCTAssertEqual(post.status, .scheduled, "失敗時は投稿済みにしない")
+        XCTAssertNil(post.publishedAt)
+    }
+
+    // canMarkAsPublished は draft/scheduled のみ true
+    func testCanMarkAsPublishedByStatus() {
+        XCTAssertTrue(makeVM(post: makePost(status: .draft)).canMarkAsPublished)
+        XCTAssertTrue(makeVM(post: makePost(status: .scheduled)).canMarkAsPublished)
+        XCTAssertFalse(makeVM(post: makePost(status: .published, publishedAt: Date())).canMarkAsPublished)
+        XCTAssertFalse(makeVM(post: makePost(status: .skipped)).canMarkAsPublished)
+    }
 }

@@ -2,24 +2,6 @@
 //  SettingsPlaceholderView.swift
 //  Post30
 //
-//  TabView 成立のための最小プレースホルダ。本格実装は後続フェーズ。
+//  Phase 9-1 で SettingsView を実装したため、このプレースホルダは役目を終えています
+//  （型定義なし）。ファイル削除が可能になった時点でプロジェクトから除去してください。
 //
-
-import SwiftUI
-
-struct SettingsPlaceholderView: View {
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "設定",
-                systemImage: "gearshape",
-                description: Text("この画面は今後のフェーズで実装します。")
-            )
-            .navigationTitle("設定")
-        }
-    }
-}
-
-#Preview {
-    SettingsPlaceholderView()
-}

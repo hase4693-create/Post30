@@ -65,7 +65,7 @@ enum SampleData {
             endDate: start.adding(days: 29),
             status: .completed
         )
-        var posts = makePosts(count: 30, startDate: start)
+        let posts = makePosts(count: 30, startDate: start)
         for (index, post) in posts.enumerated() {
             post.status = .published
             post.publishedAt = start.adding(days: index)
@@ -114,20 +114,23 @@ enum SampleData {
 
     /// 指定件数の投稿を生成する。
     /// カテゴリを循環させ、本文はテンプレートから機械的に組み立てる。
+    ///
+    /// - Important: シードは全件を「未投稿(scheduled)」・`publishedAt = nil` にする。
+    ///   以前は index で暗黙に一部を published にしていたが、
+    ///   早い日付＝投稿済みに見えて状態を誤認させる原因になったため撤廃した。
+    ///   投稿済みの確認は、ホームの「投稿済みにする」やテスト側で明示的に行う。
     static func makePosts(count: Int, startDate: Date) -> [Post] {
         (0..<count).map { index in
             let category = categoryCycle[index % categoryCycle.count]
             let date = startDate.adding(days: index)
-            // 前半は投稿予定、直近の一部は投稿済みにして状態を混在させる。
-            let status: PostStatus = index < 3 ? .published : .scheduled
             return Post(
                 scheduledDate: date,
                 scheduledTime: DateComponents(hour: 8, minute: 0),
                 platform: .threads,
                 category: category,
                 content: bodyTemplate(day: index + 1, category: category),
-                status: status,
-                publishedAt: status == .published ? date : nil
+                status: .scheduled,
+                publishedAt: nil
             )
         }
     }
