@@ -94,4 +94,20 @@ final class Post {
         }
         return String(format: "%02d:%02d", scheduledHour, scheduledMinute)
     }
+
+    // MARK: - 投稿完了（明示操作専用の状態遷移）
+
+    /// 明示操作で投稿済みにできる状態か（下書き・予約済みのみ）。
+    /// 日付・現在時刻には一切依存しない。
+    var canMarkPublished: Bool {
+        status == .draft || status == .scheduled
+    }
+
+    /// 投稿完了を記録する。status を published に、publishedAt/updatedAt を指定日時に設定する。
+    /// ユーザーの明示操作からのみ呼ぶこと（保存や日付変更では呼ばない）。
+    func markPublished(at date: Date) {
+        status = .published
+        publishedAt = date
+        updatedAt = date
+    }
 }

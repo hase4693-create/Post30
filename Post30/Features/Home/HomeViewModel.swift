@@ -156,10 +156,8 @@ final class HomeViewModel {
     /// 変更は永続化し、失敗時は saveError を立てる（値は戻さない）。
     func markAsPublished(_ post: Post) {
         guard post.status != .published else { return }
-        let timestamp = now()
-        post.status = .published
-        post.publishedAt = timestamp
-        post.updatedAt = timestamp
+        // 状態遷移ルールは Post.markPublished(at:) に一元化（編集画面と共通）。
+        post.markPublished(at: now())
         do {
             try store?.save()
         } catch {
@@ -176,5 +174,14 @@ final class HomeViewModel {
     /// 30日分生成プレースホルダへの遷移をトリガする。
     func requestGenerate() {
         path.append(.generate)
+    }
+
+    // MARK: - 今月の投稿一覧
+
+    /// 「今月の投稿」タップ用：当月の投稿だけに絞った投稿一覧 ViewModel を生成する。
+    /// 既存の PostListViewModel を再利用し、公開状態の分類ルールも共通化する。
+    /// 月範囲の判定は同じ Calendar（Locale/TimeZone 考慮）に委ねる。
+    func makeCurrentMonthListViewModel() -> PostListViewModel {
+        PostListViewModel(plan: plan, monthScope: now(), calendar: calendar)
     }
 }

@@ -1,8 +1,22 @@
-.DS_Store
-build/
+# Xcode / Swift
 DerivedData/
-*.xcuserdata
+build/
 *.xcuserstate
+**/xcuserdata/
+*.xcscmblueprint
+*.moved-aside
+
+# SwiftPM
+.swiftpm/
+.build/
+
+# 秘密情報（絶対にコミットしない）
 .env
-.env.*
+*.env
 Secrets.plist
+secrets.plist
+*.apikey
+GoogleService-Info.plist
+
+# macOS
+.DS_Store

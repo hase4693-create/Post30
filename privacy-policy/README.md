@@ -30,7 +30,7 @@
    数分後、Settings → Pages に公開URLが表示されます（一般に `https://<ユーザー名>.github.io/<リポジトリ名>/` の形式）。`index.html` をルートに置いた場合は、そのURLでポリシーが表示されます。
 
 5. **スマートフォンとPCで表示確認する**
-   公開URLをスマホ（Safari）とPCの両方で開き、見出し・本文・ダークモード表示、`post30.support@gmail.com` のmailtoリンクが動作することを確認します。
+   公開URLをスマホ（Safari）とPCの両方で開き、見出し・本文・ダークモード表示、`craftflow.apps@gmail.com` のmailtoリンクが動作することを確認します。
 
 6. **HTTPSでアクセスできることを確認する**
    URLが `https://` で始まり、証明書の警告なく表示されることを確認します（GitHub PagesはHTTPS対応）。

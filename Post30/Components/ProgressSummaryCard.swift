@@ -13,12 +13,24 @@ struct ProgressSummaryCard: View {
     let totalPostCount: Int
     let unpublishedCount: Int
     let progressRate: Double
+    /// タップ時の遷移（今月の投稿一覧へ）。nil の場合は非タップ。
+    var onTap: (() -> Void)? = nil
 
     private var percentText: String {
         "\(Int((progressRate * 100).rounded()))%"
     }
 
     var body: some View {
+        if let onTap {
+            Button(action: onTap) { cardContent }
+                .buttonStyle(PressableButtonStyle())
+                .accessibilityHint("今月の投稿一覧を開く")
+        } else {
+            cardContent
+        }
+    }
+
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
             // タイトル行
             HStack {

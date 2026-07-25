@@ -2,24 +2,6 @@
 //  CalendarPlaceholderView.swift
 //  Post30
 //
-//  TabView 成立のための最小プレースホルダ。本格実装は Phase 7。
+//  Phase 8 で CalendarView を実装したため、このプレースホルダは役目を終えています
+//  （型定義なし）。ファイル削除が可能になった時点でプロジェクトから除去してください。
 //
-
-import SwiftUI
-
-struct CalendarPlaceholderView: View {
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "カレンダー",
-                systemImage: "calendar",
-                description: Text("この画面は今後のフェーズで実装します。")
-            )
-            .navigationTitle("カレンダー")
-        }
-    }
-}
-
-#Preview {
-    CalendarPlaceholderView()
-}

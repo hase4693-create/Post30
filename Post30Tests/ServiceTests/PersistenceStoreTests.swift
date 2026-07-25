@@ -143,4 +143,25 @@ final class PersistenceStoreTests: XCTestCase {
         XCTAssertEqual(try readStore.monthPlanCount(), 1)
         XCTAssertEqual(try readStore.currentMonthPlan()?.posts.count, 2)
     }
+
+    // 改善項目1（再起動相当）：投稿日を過去へ変更しても status は未投稿のまま維持される
+    func testStatusStaysAfterDateChangeAcrossContext() throws {
+        let container = try makeContainer()
+        let writeStore = PersistenceStore(context: ModelContext(container))
+        let plan = makePlan(postStatuses: [.scheduled])
+        // 予定日を未来にしておく
+        plan.posts[0].scheduledDate = calendar.date(byAdding: .day, value: 30, to: Date())!
+        try writeStore.insertMonthPlan(plan)
+
+        // 予定日を過去へ変更して保存（ステータスは変更しない）
+        plan.posts[0].scheduledDate = calendar.date(byAdding: .day, value: -30, to: Date())!
+        try writeStore.save()
+
+        // 別コンテキストで再取得しても未投稿のまま
+        let readStore = PersistenceStore(context: ModelContext(container))
+        let fetched = try readStore.currentMonthPlan()?.posts.first
+        XCTAssertEqual(fetched?.status, .scheduled)
+        XCTAssertTrue(PostListViewModel.Filter.unpublished.matches(fetched!))
+        XCTAssertFalse(PostListViewModel.Filter.published.matches(fetched!))
+    }
 }

@@ -2,8 +2,8 @@
 //  PostListView.swift
 //  Post30
 //
-//  投稿一覧画面。検索バー（UIのみ）・フィルター・投稿カードのリスト。
-//  セルタップで編集プレースホルダへ遷移する構造を用意する（本格実装は Phase 5）。
+//  投稿一覧画面。フィルター・投稿カードのリスト。
+//  セルタップで正式な投稿編集画面へ遷移する。
 //
 
 import SwiftUI
@@ -11,15 +11,26 @@ import SwiftUI
 struct PostListView: View {
     @State private var viewModel: PostListViewModel
     private let store: PersistenceStore?
+    private let title: String
+    /// シート等で表示する際の「閉じる」処理（nil の場合はボタンを出さない）。
+    private let onClose: (() -> Void)?
+    /// 全体が0件のときに生成CTAを表示するか（通常一覧=true／今月の投稿シート=false）。
+    private let showsGenerateCTA: Bool
     private let onRequestGeneration: () -> Void
 
     init(
         viewModel: PostListViewModel,
         store: PersistenceStore? = nil,
+        title: String = "投稿一覧",
+        onClose: (() -> Void)? = nil,
+        showsGenerateCTA: Bool = true,
         onRequestGeneration: @escaping () -> Void = {}
     ) {
         _viewModel = State(initialValue: viewModel)
         self.store = store
+        self.title = title
+        self.onClose = onClose
+        self.showsGenerateCTA = showsGenerateCTA
         self.onRequestGeneration = onRequestGeneration
     }
 
@@ -49,8 +60,14 @@ struct PostListView: View {
                 .padding(.vertical, Theme.Spacing.medium)
             }
             .background(Theme.Color.screenBackground.ignoresSafeArea())
-            .navigationTitle("投稿一覧")
-            .searchable(text: $vm.searchText, prompt: "投稿を検索")
+            .navigationTitle(title)
+            .toolbar {
+                if let onClose {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("閉じる") { onClose() }
+                    }
+                }
+            }
             .navigationDestination(for: PostListViewModel.Route.self) { route in
                 switch route {
                 case .edit(let post):
@@ -76,7 +93,23 @@ struct PostListView: View {
 
     // MARK: - 空状態
 
+    @ViewBuilder
     private var emptyState: some View {
+        if showsGenerateCTA {
+            // 通常一覧：計画そのものが空 → 生成CTAを表示（接続済み）。
+            generateEmptyState
+        } else {
+            // 今月の投稿シート：当月0件 → 操作のない情報表示のみ（無反応CTAを出さない）。
+            ContentUnavailableView(
+                "今月の投稿はありません",
+                systemImage: "calendar",
+                description: Text("今月に予定されている投稿はまだありません。")
+            )
+            .padding(.top, Theme.Spacing.large)
+        }
+    }
+
+    private var generateEmptyState: some View {
         VStack(spacing: Theme.Spacing.large) {
             Image(systemName: "tray")
                 .font(.system(size: 44))
