@@ -51,9 +51,9 @@ com.hasegawa.post30
 
 ## Development Rules
 
-- Swift 6
+- Swift(現在のプロジェクト設定を維持。Swift 6言語モードへの移行は現時点で行わない)
 - SwiftData
-- iOS 18+
+- iOS 17.0+
 - Xcode 最新安定版
 
 ## Build Rules
