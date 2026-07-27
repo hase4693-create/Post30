@@ -48,7 +48,6 @@ final class PostListViewModel {
     /// 一覧からの遷移経路。
     enum Route: Hashable {
         case edit(Post)
-        case generate
     }
 
     // MARK: - 依存
@@ -124,13 +123,8 @@ final class PostListViewModel {
 
     // MARK: - アクション
 
-    /// 投稿の編集プレースホルダへ遷移する（対象 Post を渡す）。
+    /// 投稿の編集画面へ遷移する（対象 Post を渡す）。
     func requestEdit(_ post: Post) {
         path.append(.edit(post))
-    }
-
-    /// 30日分生成プレースホルダへ遷移する。
-    func requestGenerate() {
-        path.append(.generate)
     }
 }

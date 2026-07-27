@@ -14,10 +14,9 @@ import Observation
 @Observable
 final class HomeViewModel {
 
-    /// ホームからの遷移経路（プレースホルダを含む）。
+    /// ホームからの遷移経路。
     enum Route: Hashable {
         case edit(Post)
-        case generate
     }
 
     // MARK: - 依存（注入）
@@ -166,14 +165,9 @@ final class HomeViewModel {
         reload() // 進捗件数・率を即時再計算
     }
 
-    /// 編集プレースホルダへの遷移をトリガする（対象 Post を渡す）。
+    /// 編集画面への遷移をトリガする（対象 Post を渡す）。
     func requestEdit(_ post: Post) {
         path.append(.edit(post))
-    }
-
-    /// 30日分生成プレースホルダへの遷移をトリガする。
-    func requestGenerate() {
-        path.append(.generate)
     }
 
     // MARK: - 今月の投稿一覧

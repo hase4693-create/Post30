@@ -72,8 +72,6 @@ struct PostListView: View {
                 switch route {
                 case .edit(let post):
                     PostEditorView(viewModel: PostEditorViewModel(post: post, store: store))
-                case .generate:
-                    GeneratePlaceholderView()
                 }
             }
         }
@@ -135,20 +133,6 @@ struct PostListView: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)
             .padding(.top, Theme.Spacing.large * 2)
-    }
-}
-
-// MARK: - 最小プレースホルダ
-
-/// 30日分生成のプレースホルダ（本格実装は Phase 5）。
-private struct GeneratePlaceholderView: View {
-    var body: some View {
-        ContentUnavailableView(
-            "30日分の投稿を作成",
-            systemImage: "sparkles",
-            description: Text("生成機能は今後のフェーズで実装します。")
-        )
-        .navigationTitle("AIで30日分の投稿を作成")
     }
 }
 

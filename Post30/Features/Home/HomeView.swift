@@ -57,8 +57,6 @@ struct HomeView: View {
                 case .edit(let post):
                     // 一覧・カレンダーと同じ正式な編集画面へ統一（プレースホルダ廃止）。
                     PostEditorView(viewModel: PostEditorViewModel(post: post, store: store))
-                case .generate:
-                    GeneratePlaceholderView()
                 }
             }
             .overlay(alignment: .bottom) {
@@ -246,20 +244,6 @@ struct HomeView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         #endif
-    }
-}
-
-// MARK: - 最小プレースホルダ（生成）
-
-/// 30日分生成のプレースホルダ（本格実装は Phase 5）。
-private struct GeneratePlaceholderView: View {
-    var body: some View {
-        ContentUnavailableView(
-            "30日分の投稿を作成",
-            systemImage: "sparkles",
-            description: Text("生成機能は今後のフェーズで実装します。")
-        )
-        .navigationTitle("AIで30日分の投稿を作成")
     }
 }
 
