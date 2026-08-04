@@ -1,6 +1,6 @@
 # RELEASE_CHECKLIST.md — Post30 App Store公開チェックリスト
 
-Post30をApp Storeへ申請する前に確認すべき項目を整理したチェックリスト。Phase 12(2026-07-27)・Phase 13(2026-07-27〜2026-07-28)時点の調査結果を反映している。完了状況は今後のPhaseで随時更新する。
+Post30をApp Storeへ申請する前に確認すべき項目を整理したチェックリスト。Phase 12(2026-07-27)・Phase 13(2026-07-27〜2026-07-28)・Phase 14-B(2026-07-29)時点の調査結果を反映している。完了状況は今後のPhaseで随時更新する。
 
 `APP_STORE_PRIVACY_DRAFT.md`との役割分担: 本ファイルは申請前作業全体のgo/no-goチェックリスト。`privacy-policy/APP_STORE_PRIVACY_DRAFT.md`はApp Privacy回答(データ収集有無)の判断根拠専用の文書として維持する。
 
@@ -19,13 +19,22 @@ Post30をApp Storeへ申請する前に確認すべき項目を整理したチ�
 
 ## 2. 主要導線・リリース品質
 
+**Phase 14-B 実機QA環境**: iPhone17 / iOS 26 / Xcode: 未記録 / 確認日: 2026-07-29
+
 - [x] Home/PostList/Calendarの主要ロジック(自動テストで確認済み)
-- [ ] Home/PostList/Calendar/Settingsの実機/シミュレータでの目視動作確認(未実施・要ユーザー確認)
-- [ ] Empty State表示の実機確認(未実施)
-- [ ] 保存失敗時のアラート表示の実機確認(自動テストなし・未実施)
-- [ ] 設定画面の外部リンク(お問い合わせ/プライバシーポリシー)タップ動作確認(未実施)
-- [ ] Dynamic Type最大時の`CalendarDayCell`/`PostStatusBadge`崩れ確認(未実施、固定frame残存を確認済み)
-- [ ] VoiceOver実機確認・Accessibility Inspector監査(未実施、CLIから実行不可)
+- [x] Home/PostList/Calendar/Settingsの実機動作確認(Phase 14-Bで確認、問題なし)
+- [x] 基本起動・ホーム画面・投稿作成/編集・投稿ステータス・コピー機能・一覧画面・カレンダー・設定画面・異常系確認(Phase 14-Bで確認、問題なし・その他の気になる点なし)
+- [x] Empty State表示の実機確認(Phase 14-Bで確認、問題なし)
+- [ ] 保存失敗時のアラート表示の実機確認(意図的な保存失敗の再現が困難なため未実施)
+- [x] 設定画面の外部リンク(お問い合わせ/プライバシーポリシー)タップ動作確認(Phase 14-Bで確認、両リンクとも正常動作)
+- [x] Dynamic Type最大時の`CalendarDayCell`/`PostStatusBadge`崩れ確認(Phase 14-Bで確認、崩れなし)
+- [x] VoiceOver実機確認(Phase 14-Bで確認、問題なし)
+- [x] ダークモード表示確認(Phase 14-Bで確認、問題なし)
+- [x] 画面回転(Portrait固定)の実機確認(Phase 14-Bで確認。設定通りPortrait固定で横向きへ回転せず、クラッシュなし)
+- [x] データ保持確認(アプリ完全終了後の再起動を含む、Phase 14-Bで確認、問題なし)
+- [x] オフライン動作確認(閲覧・作成・編集・保存、Phase 14-Bで確認、問題なし)
+- [x] Phase 14-B実機QAでのクラッシュ・Xcodeコンソールの赤いエラー・紫色のRuntime Warning: なし
+- [ ] 投稿単位の削除機能: 未実装(V1.0申請ブロッカーではない。V1.1以降のBacklogとして継続管理)
 
 ## 3. App Store公開設定
 
