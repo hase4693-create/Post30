@@ -198,6 +198,9 @@ the source of truth for remaining release work.
 
 ## Documentation
 
+- `AGENTS.md`: development workflow, approval gates, and agent rules
+- `PROJECT.md`: product definition, current status, and roadmap
+- `ARCHITECTURE.md`: technical structure, data boundaries, and future integration policy
 - `PHASE_HISTORY.md`: completed Phase history and verified outcomes
 - `RELEASE_CHECKLIST.md`: release readiness, completed checks, and remaining work
 - `CLAUDE.md`: legacy Claude Code guidance; when it conflicts with this file or
@@ -205,6 +208,29 @@ the source of truth for remaining release work.
   `AGENTS.md` second
 
 Do not invent historical Phase details or mark unperformed checks as complete.
+
+When these documents disagree, stop and ask which source is authoritative. Do
+not silently reconcile conflicting facts.
+
+## Release Approval Gates
+
+Release work is sequential and separately approved:
+
+1. Confirm the approved Version and Build values.
+2. Confirm Bundle ID, signing team, capabilities, AppIcon, export compliance,
+   and Release configuration.
+3. Run the approved Release build and tests.
+4. Create and validate an Archive.
+5. Upload to App Store Connect.
+6. Confirm TestFlight processing and perform approved QA.
+7. Complete metadata, privacy, screenshots, age rating, and review information.
+8. Obtain separate approval for App Store submission.
+9. Obtain separate approval for release.
+10. Record only the observed results in the release documentation.
+
+Version or Build changes, Archive distribution, upload, TestFlight
+distribution, submission, and release each require explicit approval. A
+successful local build does not prove release readiness.
 
 ## Separate Web Project
 
